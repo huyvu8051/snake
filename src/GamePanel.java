@@ -4,6 +4,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener {
@@ -11,16 +13,13 @@ public class GamePanel extends JPanel implements ActionListener {
     static final int SCREEN_WIDTH = 1200;
     static final int SCREEN_HEIGHT = 1000;
     static final int UNIT_SIZE = 25;
-    static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
-    static final int DELAY = 75;
-    final int x[] = new int[GAME_UNITS];
-    final int y[] = new int[GAME_UNITS];
+    static final int DELAY = 60;
 
-    int bodyParts = 6;
-    int applesEaten;
-    int appleX;
-    int appleY;
-    char direction = 'R';
+    final List<Node> bodyParts2 = new ArrayList<>();
+
+
+    Node apple;
+    char  direction = 'R';
     boolean running = false;
     Timer timer;
     Random random;
@@ -36,6 +35,11 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void startGame() {
+
+        for (int i = 0; i < 3; i++) {
+            bodyParts2.add(new Node(UNIT_SIZE, UNIT_SIZE));
+        }
+
         newApple();
         running = true;
         timer = new Timer(DELAY, this);
@@ -49,7 +53,7 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void draw(Graphics g) {
-
+        // print grid line
         for (int i = 0; i < SCREEN_HEIGHT / UNIT_SIZE; i++) {
             g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
         }
@@ -58,24 +62,31 @@ public class GamePanel extends JPanel implements ActionListener {
             g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
         }
 
-        g.setColor(Color.red);
-        g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
 
-        for (int i = 0; i < bodyParts; i++) {
-            if (i == 0) {
-                g.setColor(Color.green);
-                g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+        // print apple
+        g.setColor(apple.getColor());
+        g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
+
+
+        // print snake body
+        for (int i = 0; i < bodyParts2.size(); i++) {
+            if (i == -1) {
+                Node head = bodyParts2.get(0);
+                g.setColor(Color.BLUE);
+                g.fillRect(head.getX(), head.getY(), UNIT_SIZE, UNIT_SIZE);
             } else {
-                g.setColor(new Color(45, 180, 0));
-                //g.setColor(new Color(random.nextInt(255),random.nextInt(255),random.nextInt(255)));
-                g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+                Node body = bodyParts2.get(i);
+                g.setColor(body.getColor());
+                g.fillRect(body.getX(), body.getY(), UNIT_SIZE, UNIT_SIZE);
             }
         }
 
+
+        // print total score
         g.setColor(Color.red);
         g.setFont(new Font("Ink Free", Font.BOLD, 40));
         FontMetrics metrics = getFontMetrics(g.getFont());
-        g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
+        g.drawString("Score: " + bodyParts2.size(), (SCREEN_WIDTH - metrics.stringWidth("Score: " + bodyParts2.size())) / 2, g.getFont().getSize());
 
         if (!running) {
             gameOver(g);
@@ -83,30 +94,45 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void newApple() {
-        appleX = random.nextInt(SCREEN_WIDTH / UNIT_SIZE) * UNIT_SIZE;
-        appleY = random.nextInt(SCREEN_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
+        int appleX1 = random.nextInt(SCREEN_WIDTH / UNIT_SIZE) * UNIT_SIZE;
+
+        int appleY1 = random.nextInt(SCREEN_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
+
+
+        apple = new Node(appleX1, appleY1, Color.red);
 
 
     }
 
     public void move() {
-        for (int i = bodyParts; i > 0; i--) {
-            x[i] = x[i - 1];
-            y[i] = y[i - 1];
+
+        for (int i = bodyParts2.size() - 1; i > 0; i--) {
+            Node node = bodyParts2.get(i);
+            Node node2 = bodyParts2.get(i - 1);
+
+            node.setX(node2.getX());
+            node.setY(node2.getY());
         }
+
+        Node head = bodyParts2.get(0);
+
+        int x1 = head.getX();
+        int y1 = head.getY();
+
+
 
         switch (direction) {
             case 'U':
-                y[0] = ((y[0] + SCREEN_HEIGHT) - UNIT_SIZE) % SCREEN_HEIGHT;
+                head.setY(((y1 + SCREEN_HEIGHT) - UNIT_SIZE) % SCREEN_HEIGHT);
                 break;
             case 'D':
-                y[0] = (y[0] + UNIT_SIZE) % SCREEN_HEIGHT;
+                head.setY((y1 + UNIT_SIZE) % SCREEN_HEIGHT);
                 break;
             case 'L':
-                x[0] = ((x[0] + SCREEN_WIDTH) - UNIT_SIZE) % SCREEN_WIDTH;
+                head.setX(((x1 + SCREEN_WIDTH) - UNIT_SIZE) % SCREEN_WIDTH);
                 break;
             case 'R':
-                x[0] = (x[0] + UNIT_SIZE) % SCREEN_WIDTH;
+                head.setX((x1 + UNIT_SIZE) % SCREEN_WIDTH);
                 break;
         }
 
@@ -114,34 +140,27 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     public void checkApple() {
-        if ((x[0] == appleX) && (y[0] == appleY)) {
-            bodyParts++;
-            applesEaten++;
+
+        Node head = bodyParts2.get(0);
+
+        Node tail = bodyParts2.get(bodyParts2.size() - 1);
+
+        if (head.equals(apple)) {
+            bodyParts2.add(new Node(tail.getX(), tail.getY()));
             newApple();
         }
     }
 
     public void checkCollisions() {
-        for (int i = bodyParts; i > 0; i--) {
-            if ((x[0] == x[i]) && (y[0] == y[i])) {
-                running = false;
-            }
-        }
-/*
-        if (x[0] < 0) {
-            running = false;
-        }
-        if (x[0] > SCREEN_WIDTH) {
-            running = false;
-        }
-        if (y[0] < 0) {
-            running = false;
-        }
-        if (y[0] > SCREEN_WIDTH) {
-            running = false;
+        Node head = bodyParts2.get(0);
+
+        for(int i = bodyParts2.size() - 1; i > 0; i --){
+
+            Node body = bodyParts2.get(i);
+
+            if(head.equals(body)) running = false;
         }
 
-        */
 
 
         if (!running) timer.stop();
@@ -152,10 +171,9 @@ public class GamePanel extends JPanel implements ActionListener {
         g.setColor(Color.red);
         g.setFont(new Font("Ink Free", Font.BOLD, 40));
         FontMetrics metrics1 = getFontMetrics(g.getFont());
-        g.drawString("Score: " + applesEaten, (SCREEN_WIDTH - metrics1.stringWidth("Score: " + applesEaten)) / 2, g.getFont().getSize());
+        g.drawString("Score: " + bodyParts2.size(), (SCREEN_WIDTH - metrics1.stringWidth("Score: " + bodyParts2.size())) / 2, g.getFont().getSize());
 
 
-        g.setColor(Color.red);
         g.setFont(new Font("Ink Free", Font.BOLD, 75));
         FontMetrics metrics2 = getFontMetrics(g.getFont());
         g.drawString("Game over", (SCREEN_WIDTH - metrics2.stringWidth("Game over")) / 2, SCREEN_HEIGHT / 2);
