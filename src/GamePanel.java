@@ -10,8 +10,8 @@ import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener {
 
-    static final int SCREEN_WIDTH = 1200;
-    static final int SCREEN_HEIGHT = 1000;
+    static final int SCREEN_WIDTH = 600;
+    static final int SCREEN_HEIGHT = 500;
     static final int UNIT_SIZE = 25;
     static final int DELAY = 60;
 
@@ -31,6 +31,10 @@ public class GamePanel extends JPanel implements ActionListener {
         this.setBackground(Color.black);
         this.setFocusable(true);
         this.addKeyListener(new MyKeyAdapter());
+
+
+
+
         startGame();
     }
 
@@ -42,7 +46,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
         newApple();
         running = true;
-        timer = new Timer(DELAY, this);
+        timer = new Timer(DELAY , this);
         timer.start();
 
     }
@@ -136,7 +140,7 @@ public class GamePanel extends JPanel implements ActionListener {
                 break;
         }
 
-        System.out.println("some think new");
+//        System.out.println("some think new");
     }
 
     public void checkApple() {
